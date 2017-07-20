@@ -1,0 +1,9 @@
+{
+  "name": "ha-node",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^3.0.0"
+  }
+}
