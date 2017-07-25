@@ -8,7 +8,7 @@ let ha = new Homeassistant({
 ha.connect()
   .then(() => {
     // subscribe to state changes
-    ha.on('state:media_player.spotify', data => console.log(data))
+    ha.on('state:media_player.spotify', data => console.log)
 
     // access current state
     console.log(ha.state('sun.sun'))
