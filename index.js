@@ -117,12 +117,4 @@ class Homeassistant extends EventEmitter {
   }
 }
 
-let ha = new Homeassistant({
-  host: '192.168.1.166'
-})
-
-ha.connect()
-  .then(() => {
-    ha.on('state:media_player.spotify', data => console.log(data))
-  })
-  .catch(console.error)
+module.exports = Homeassistant
