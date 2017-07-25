@@ -1,3 +1,4 @@
+const EventEmitter = require('events')
 const Websocket = require('ws')
 
 const defaultConfig = {
@@ -7,13 +8,15 @@ const defaultConfig = {
   password: ''
 }
 
+class Homeassistant extends EventEmitter {
+  constructor(options) {
+    super()
 
-class Homeassistant {
-  constructor(config) {
-    this.config = Object.assign(defaultConfig, config)
+    this.config = Object.assign(defaultConfig, options)
 
     this.url = `ws://${this.config.host}:${this.config.port}/api/websocket`
     this.promises = {}
+    this.states = []
     this.id = 1
   }
 
@@ -23,12 +26,16 @@ class Homeassistant {
     this.ws.on('message', data => {
       data = JSON.parse(data)
 
-      let d = data.id || data.type
-      let p = this.promises[d]
+      let p = this.promises[data.id]
 
-      if (p) {
+      if (!p) return false;
+
+      if (p.timeout) {
         clearTimeout(p.timeout)
-        p.resolve(data)
+      }
+
+      if (p.callback) {
+        p.callback(data)
       }
     })
 
@@ -36,6 +43,16 @@ class Homeassistant {
       this.ws.on('open', () => {
         resolve(this)
       }) 
+    }).then(() => {
+      return this.send({
+        type: 'get_states'
+      })
+    }).then(states => {
+      this.states = states.result
+
+      return this.subscribe({
+        callback: this.updateState.bind(this)
+      })
     })
   }
 
@@ -48,10 +65,55 @@ class Homeassistant {
         timeout: setTimeout(() => {
           return reject(new Error('No response received from home-assistant'))
         }, this.config.timeout),
-        resolve
+        callback: resolve
       }
       this.ws.send(JSON.stringify(data))
     })
+  }
+
+  call(options) {
+    return this.send(Object.assign({type: 'call_service'}, options))
+  }
+
+  subscribe(options) {
+    if(!options.callback) throw new Error('Callback function is required')
+
+    let data = { type: 'subscribe_events' }
+
+    if(options.event) data.event_type = event
+
+    return this.send(data)
+      .then((data) => {
+        if(!data.success) return Promise.reject(new Error(data))
+
+        this.promises[data.id].callback = options.callback
+        return Promise.resolve(data)
+      })
+  }
+
+  unsubscribe(subscription) {
+    return this.send({
+      type: 'unsubscribe_events',
+      subscription
+    })
+  }
+
+  findEntity(id) {
+    return this.states.findIndex(state => state.entity_id === id)
+  }
+
+  updateState(change) {
+    let data = change.event.data
+    if (change.event.event_type !== 'state_changed') return true
+
+    let changeIndex = this.findEntity(data.entity_id)
+
+    this.states[changeIndex] = data.new_state
+    this.emit(`state:${data.entity_id}`, data)
+  }
+
+  state(entity) {
+    return this.states[this.findEntity(entity)]
   }
 }
 
@@ -61,9 +123,6 @@ let ha = new Homeassistant({
 
 ha.connect()
   .then(() => {
-    return ha.send({
-      type: 'get_states'
-    })
+    ha.on('state:media_player.spotify', data => console.log(data))
   })
-  .then(console.log)
   .catch(console.error)
