@@ -1,5 +1,5 @@
 {
-  "name": "ha-node",
+  "name": "node-homeassistant",
   "version": "0.0.1",
   "main": "index.js",
   "license": "MIT",
