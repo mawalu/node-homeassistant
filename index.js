@@ -42,9 +42,6 @@ class Homeassistant extends EventEmitter {
       }
     })
 
-    this.ws.on('open', () => {
-          })
-
     this.ws.on('error',  () => {
       this.reconnect()
     })
