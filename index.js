@@ -43,15 +43,18 @@ class Homeassistant extends EventEmitter {
     })
 
     this.ws.on('error',  () => {
+      this.emit('connection', 'connection_error')
       this.reconnect()
     })
 
     this.ws.on('close', () => {
+      this.emit('connection', 'connection_closed')
       this.reconnect()
     })
 
     return new Promise((resolve, reject) => {
       this.ws.on('open', () => {
+        this.emit('connection', 'connected')
         if(this.retry) {
           clearTimeout(this.retry)
           this.retry = null
@@ -85,10 +88,9 @@ class Homeassistant extends EventEmitter {
       if(this.retriesLeft > 0) this.retriesLeft--
 
       try {
+        this.emit('connection', 'reconnecting')
         this.connect()
-      } catch (error) {
-        console.log('Reconnecting failed')
-      }
+      } catch (error) { }
     }, this.config.retryTimeout)
   }
 
