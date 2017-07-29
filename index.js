@@ -29,6 +29,20 @@ class Homeassistant extends EventEmitter {
     this.ws.on('message', data => {
       data = JSON.parse(data)
 
+      if (data.type == 'auth_ok') {
+        this.emit('connection', 'authenticated')
+      }
+
+      if (data.type == 'auth_required') {
+        if (!this.config.password) throw new Error('Password required')
+
+        return this.send({type: 'auth', api_password: this.config.password}, false)
+      }
+
+      if (data.type == 'auth_invalid') {
+        throw new Error('Invalid password')
+      }
+
       let p = this.promises[data.id]
 
       if (!p) return false;
@@ -42,6 +56,16 @@ class Homeassistant extends EventEmitter {
       }
     })
 
+    this.ws.on('open', () => {
+      this.emit('connection', 'connected')
+      if(this.retry) {
+        clearTimeout(this.retry)
+        this.retry = null
+      }
+
+      this.retriesLeft = this.config.retryCount
+    })
+
     this.ws.on('error',  () => {
       this.emit('connection', 'connection_error')
       this.reconnect()
@@ -53,16 +77,9 @@ class Homeassistant extends EventEmitter {
     })
 
     return new Promise((resolve, reject) => {
-      this.ws.on('open', () => {
-        this.emit('connection', 'connected')
-        if(this.retry) {
-          clearTimeout(this.retry)
-          this.retry = null
-        }
-
-        this.retriesLeft = this.config.retryCount
-        resolve(this)
-      }) 
+      this.on('connection', info => {
+        if (info == 'authenticated') resolve(this)
+      })
     }).then(() => {
       return this.send({
         type: 'get_states'
@@ -94,9 +111,11 @@ class Homeassistant extends EventEmitter {
     }, this.config.retryTimeout)
   }
 
-  send(data) {
-    data.id = this.id
-    this.id++
+  send(data, addId = true) {
+    if (addId) {
+      data.id = this.id
+      this.id++
+    }
 
     return new Promise((resolve, reject) => {
       this.promises[data.id] = {
