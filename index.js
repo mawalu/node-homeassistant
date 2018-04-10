@@ -3,6 +3,7 @@ const Websocket = require('uws')
 
 const defaultConfig = {
   host: 'localhost',
+  protocol: 'ws',
   retryTimeout: 5000,
   timeout: 5000,
   retryCount: 10,
@@ -16,7 +17,7 @@ class Homeassistant extends EventEmitter {
 
     this.config = Object.assign(defaultConfig, options)
 
-    this.url = `ws://${this.config.host}:${this.config.port}/api/websocket`
+    this.url = `${this.config.protocol}://${this.config.host}:${this.config.port}/api/websocket`
     this.retriesLeft = this.config.retryCount
     this.promises = {}
     this.states = []
