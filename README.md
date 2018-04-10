@@ -1,4 +1,4 @@
-# Node.js api for home-assistant
+# Node.js api for home-assistant [![](https://img.shields.io/npm/v/node-homeassistant.svg)](https://www.npmjs.com/package/node-homeassistant)
 
 A simple package to access & controll home-assistant from node.js using the websocket api.
 
