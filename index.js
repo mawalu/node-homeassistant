@@ -1,5 +1,5 @@
 const EventEmitter = require('events')
-const Websocket = require('uws')
+const Websocket = require('ws')
 
 const defaultConfig = {
   host: 'localhost',
