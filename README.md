@@ -20,7 +20,8 @@ let ha = new Homeassistant({
   protocol: 'ws', // "ws" (default) or "wss" for SSL
   retryTimeout: 1000, // in ms, default is 5000
   retryCount: 3, // default is 10, values < 0 mean unlimited
-  password: 'super_secure',
+  password: 'http_api_password', // api_password is getting depricated by home assistant
+  token: 'access_token' // for now both tokens and api_passwords are suported
   port: 8123
 })
 

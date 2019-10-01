@@ -8,7 +8,8 @@ const defaultConfig = {
   timeout: 5000,
   retryCount: 10,
   port: 8123,
-  password: ''
+  password: '',
+  token: ''
 }
 
 class Homeassistant extends EventEmitter {
@@ -35,7 +36,10 @@ class Homeassistant extends EventEmitter {
       }
 
       if (data.type == 'auth_required') {
-        if (!this.config.password) throw new Error('Password required')
+        if (!this.config.password && !this.config.token) throw new Error('Password required')
+
+        if (this.config.token)
+          return this.send({type: 'auth', access_token: this.config.token}, false)
 
         return this.send({type: 'auth', api_password: this.config.password}, false)
       }
